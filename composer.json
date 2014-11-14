@@ -1,0 +1,18 @@
+{
+    "name": "intersvyaz/yii2-sqlparser",
+    "description": "Parsing sql-query",
+    "keywords": ["yii2", "extension", "database"],
+    "homepage": "https://github.com/intersvyaz/yii2-sqlparser.git",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": "~2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "autoload": {
+        "psr-4": {"Intersvyaz\\SqlParser\\": ""}
+    }
+}
