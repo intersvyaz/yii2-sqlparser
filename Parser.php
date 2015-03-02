@@ -23,10 +23,11 @@ class Parser
      */
     public function __construct($sql, $params = [])
     {
-        if (substr($sql, -4) === '.sql')
+        if (substr($sql, -4) === '.sql') {
             $this->sql = file_get_contents($sql);
-        else
+        } else {
             $this->sql = $sql;
+        }
 
         $this->params = $params;
         $this->parseSql();
@@ -76,13 +77,15 @@ class Parser
             $key = ':' . ltrim($key, ':');
             if (is_array($value)) {
                 if (isset($value[0]) && is_array($value[0])) {
-                    foreach ($value[0] as $valKey => $valVal)
+                    foreach ($value[0] as $valKey => $valVal) {
                         $newParams[$key . '_' . $valKey] = $valVal;
+                    }
                 } elseif (!isset($value['bind']) || $value['bind'] === true) {
-                    if (isset($value[0]) && isset($value[1]))
+                    if (isset($value[0]) && isset($value[1])) {
                         $newParams[$key] = [$value[0], $value[1]];
-                    elseif (isset($value[0]))
+                    } elseif (isset($value[0])) {
                         $newParams[$key] = $value[0];
+                    }
                 }
             } else {
                 $newParams[$key] = $value;
@@ -91,7 +94,6 @@ class Parser
 
         return $newParams;
     }
-
 
     /**
      * Функция разбора и подготовки текста sql запроса.
@@ -129,9 +131,10 @@ class Parser
      */
     private function replaceComment($comment, $queryInComment, $paramName)
     {
-        $paramName = ltrim($paramName, ':');
-        if (array_key_exists($paramName, $this->params)) {
-            $paramValue = $this->params[$paramName];
+        $param = $this->getParam($paramName);
+        if ($param) {
+            $paramName = $param[0];
+            $paramValue = $param[1];
             if (is_array($paramValue)) {
                 $value = isset($paramValue[0]) ? $paramValue[0] : null;
                 $bind = isset($paramValue['bind']) ? $paramValue['bind'] : true;
@@ -155,5 +158,23 @@ class Parser
         }
 
         $this->sql = str_replace($comment, $queryInComment, $this->sql);
+    }
+
+    /**
+     * Ищет параметр в массиве $this->params
+     * @param string $name имя параметра
+     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь если параметра нет
+     */
+    private function getParam($name)
+    {
+        $name = ltrim($name, ':');
+
+        if (array_key_exists($name, $this->params)) {
+            return [$name, $this->params[$name]];
+        } elseif (array_key_exists(':' . $name, $this->params)) {
+            return [$name, $this->params[':' . $name]];
+        }
+
+        return false;
     }
 }
