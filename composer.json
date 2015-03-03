@@ -1,18 +1,29 @@
 {
     "name": "intersvyaz/yii2-sqlparser",
     "description": "Parsing sql-query",
-    "keywords": ["yii2", "extension", "database"],
+    "keywords": [
+        "yii2",
+        "extension",
+        "database"
+    ],
     "homepage": "https://github.com/intersvyaz/yii2-sqlparser.git",
     "license": "MIT",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "yiisoft/yii2": "~2.0"
+        "fxp/composer-asset-plugin": " ~1.0.0",
+        "yiisoft/yii2": "~2.0.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "*"
+        "phpunit/phpunit": "~4.5.0"
     },
     "autoload": {
         "psr-4": {"Intersvyaz\\SqlParser\\": ""}
+    },
+    "extra": {
+        "asset-installer-paths": {
+            "npm-asset-library": "vendor/npm",
+            "bower-asset-library": "vendor/bower"
+        }
     }
 }

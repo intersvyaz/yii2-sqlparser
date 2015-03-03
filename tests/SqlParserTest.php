@@ -18,6 +18,7 @@ class SqlParserTest extends TestCase
 
         return [
             [$query, ['param1' => 'v1'], '/^\s*sql1\s*$/'],
+            [$query, [':param1' => 'v1'], '/^\s*sql1\s*$/'],
             [$query, ['param1' => 'v1', 'param2' => ['v2', \PDO::PARAM_STR]], '/^\s*sql1\s*sql2\s*$/'],
             [$query, ['param6' => 'v6'], '/^\s*$/'],
             [$query, ['param6' => 'v6', 'param7' => 'v7'], '/^\s*sql7\s*$/'],
