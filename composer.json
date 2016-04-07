@@ -11,7 +11,6 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "fxp/composer-asset-plugin": " >=1.1.0",
         "yiisoft/yii2": "~2.0.0"
     },
     "require-dev": {
@@ -20,10 +19,4 @@
     "autoload": {
         "psr-4": {"Intersvyaz\\SqlParser\\": ""}
     },
-    "extra": {
-        "asset-installer-paths": {
-            "npm-asset-library": "vendor/npm",
-            "bower-asset-library": "vendor/bower"
-        }
-    }
 }
