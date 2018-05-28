@@ -76,15 +76,37 @@ class Parser
         foreach ($params as $key => $value) {
             $key = ':' . ltrim($key, ':');
             if (is_array($value)) {
-                if (isset($value[0]) && is_array($value[0])) {
-                    foreach ($value[0] as $valKey => $valVal) {
-                        $newParams[$key . '_' . $valKey] = $valVal;
-                    }
-                } elseif (!isset($value['bind']) || $value['bind'] === true) {
+                if (!isset($value['bind'])) {
+                    $value['bind'] = true;
+                }
+
+                if ($value['bind'] === true) {
                     if (isset($value[0]) && isset($value[1])) {
                         $newParams[$key] = [$value[0], $value[1]];
                     } elseif (isset($value[0])) {
                         $newParams[$key] = $value[0];
+                    }
+                } elseif ($value['bind'] === 'tuple') {
+
+                    if (isset($value[0]) && is_array($value[0])) {
+                        //скинем индексы
+                        $value[0] = array_values($value[0]);
+
+                        foreach ($value[0] as $valKey => $valVal) {
+                            if (is_array($valVal)) {
+                                foreach ($valVal as $k => $v) {
+                                    $newParams[$key . '_' . $valKey . '_' . $k] = $v;
+                                }
+                            } else {
+                                $newParams[$key . '_' . $valKey] = $valVal;
+                            }
+                        }
+                    } elseif (isset($value[0])) {
+                        $newParams[$key] = $value[0];
+                    }
+                } elseif (isset($value[0]) && is_array($value[0])) {
+                    foreach ($value[0] as $valKey => $valVal) {
+                        $newParams[$key . '_' . $valKey] = $valVal;
                     }
                 }
             } else {
@@ -152,6 +174,30 @@ class Parser
                 $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/', $replacement, $queryInComment);
             } elseif ($bind === 'text') {
                 $queryInComment = preg_replace('/' . preg_quote($paramName) . '/', $value, $queryInComment);
+            } elseif ($bind === 'tuple') {
+                if (is_array($paramValue[0])) {
+                    $replacements = [];
+                    //скинем индексы
+                    $paramValue[0] = array_values($paramValue[0]);
+
+                    foreach ($paramValue[0] as $keyParam => $val) {
+                        $name = ':' . $paramName . '_' . $keyParam;
+                        if (is_array($val)) {
+                            $valArr = [];
+                            foreach (array_keys($val) as $keyVal) {
+                                $valArr[] = $name . '_' . $keyVal;
+                            }
+                            $valName = implode(',', $valArr);
+                        } else {
+                            $valName = $name;
+                        }
+                        $replacements[] = '(' . $valName . ')';
+                    }
+                    $replacement = implode(',', $replacements);
+                } else {
+                    $replacement = $paramValue;
+                }
+                $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/', $replacement, $queryInComment);
             }
         } else {
             $queryInComment = '';
@@ -163,7 +209,8 @@ class Parser
     /**
      * Ищет параметр в массиве $this->params
      * @param string $name имя параметра
-     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь если параметра нет
+     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь если параметра
+     *     нет
      */
     private function getParam($name)
     {
