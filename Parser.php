@@ -84,7 +84,13 @@ class Parser
                     if (isset($value[0]) && isset($value[1])) {
                         $newParams[$key] = [$value[0], $value[1]];
                     } elseif (isset($value[0])) {
-                        $newParams[$key] = $value[0];
+                        if (is_array($value[0])) {
+                            foreach ($value[0] as $valKey => $valVal) {
+                                $newParams[$key . '_' . $valKey] = $valVal;
+                            }
+                        } else {
+                            $newParams[$key] = $value[0];
+                        }
                     }
                 } elseif ($value['bind'] === 'tuple') {
 
@@ -113,7 +119,6 @@ class Parser
                 $newParams[$key] = $value;
             }
         }
-
         return $newParams;
     }
 
