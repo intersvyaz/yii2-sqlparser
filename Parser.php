@@ -128,7 +128,7 @@ class Parser
     private function parseSql()
     {
         // Разбор многострочных комментариев
-        if (preg_match_all('#/\*(\w+)(.+?)\*/#s', $this->sql, $matches)) {
+        if (preg_match_all('#/\*([\w|]+)(.+?)\*/#s', $this->sql, $matches)) {
             $count = count($matches[0]);
             for ($i = 0; $i < $count; $i++) {
                 $this->replaceComment($matches[0][$i], $matches[2][$i], $matches[1][$i]);
@@ -137,7 +137,7 @@ class Parser
 
         // Многоитерационный разбор однострчных комментариев
         while (true) {
-            if (preg_match_all('#--\*(\w+)(.+)#', $this->sql, $matches)) {
+            if (preg_match_all('#--\*([\w|]+)(.+)#', $this->sql, $matches)) {
                 $count = count($matches[0]);
                 for ($i = 0; $i < $count; $i++) {
                     $this->replaceComment($matches[0][$i], $matches[2][$i], $matches[1][$i]);
@@ -159,7 +159,21 @@ class Parser
     private function replaceComment($comment, $queryInComment, $paramName)
     {
         $param = $this->getParam($paramName);
-        if ($param) {
+
+        if (strpos($paramName, '|')) {
+            $found = false;
+
+            foreach (explode('|', $paramName) as $param) {
+                if (array_key_exists($param, $this->params)) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $queryInComment = '';
+            }
+        } elseif ($param) {
             $paramName = $param[0];
             $paramValue = $param[1];
             if (is_array($paramValue)) {

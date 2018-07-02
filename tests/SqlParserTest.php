@@ -14,6 +14,8 @@ class SqlParserTest extends TestCase
                 /*param4 --*param5 sql5 */
                 /*param8 --*param9 --*param10 sql10 */
                 --*param11 :@param11
+                --*param12|param13 test multiple
+                /*param14|param15 test multiple*/
         ';
 
         return [
@@ -29,7 +31,8 @@ class SqlParserTest extends TestCase
             ["-- test\n".$query, [], '/^-- test$/'],
             [$query, ['param11' => [['v1', 'v2']]], "/^:param11_0,:param11_1$/"],
             ["--*param order by param", ['param' => ['v1', 'bind' => 'text']], "/^order by v1$/"],
-
+            [$query, ['param12' => 'test'], "/^test multiple$/"],
+            [$query, ['param14' => 'test'], "/^test multiple$/"],
         ];
     }
 
