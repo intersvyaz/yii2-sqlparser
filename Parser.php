@@ -190,9 +190,9 @@ class Parser
                     $valArr[] = ':' . $paramName . '_' . $keyVal;
                 }
                 $replacement = implode(',', $valArr);
-                $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/', $replacement, $queryInComment);
+                $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/i', $replacement, $queryInComment);
             } elseif ($bind === 'text') {
-                $queryInComment = preg_replace('/' . preg_quote($paramName) . '/', $value, $queryInComment);
+                $queryInComment = preg_replace('/' . preg_quote($paramName) . '/i', $value, $queryInComment);
             } elseif ($bind === 'tuple') {
                 if (is_array($paramValue[0])) {
                     $replacements = [];
@@ -216,7 +216,7 @@ class Parser
                 } else {
                     $replacement = $paramValue;
                 }
-                $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/', $replacement, $queryInComment);
+                $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/i', $replacement, $queryInComment);
             }
         } else {
             $queryInComment = '';
@@ -233,12 +233,13 @@ class Parser
      */
     private function getParam($name)
     {
-        $name = ltrim($name, ':');
+        $name = mb_strtolower(ltrim($name, ':'));
+        $params = array_change_key_case($this->params, CASE_LOWER);
 
-        if (array_key_exists($name, $this->params)) {
-            return [$name, $this->params[$name]];
-        } elseif (array_key_exists(':' . $name, $this->params)) {
-            return [$name, $this->params[':' . $name]];
+        if (array_key_exists($name, $params)) {
+            return [$name, $params[$name]];
+        } elseif (array_key_exists(':' . $name, $params)) {
+            return [$name, $params[':' . $name]];
         }
 
         return false;

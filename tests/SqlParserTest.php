@@ -16,6 +16,10 @@ class SqlParserTest extends TestCase
                 --*param11 :@param11
                 --*param12|param13 test multiple
                 /*param14|param15 test multiple*/
+                /*PARAM16 case-insensitive*/
+                --*param17 case-insensitive2
+                --*PARAM18 case-insensitive3
+                /*param19 :@param19*/
         ';
 
         return [
@@ -33,6 +37,9 @@ class SqlParserTest extends TestCase
             ["--*param order by param", ['param' => ['v1', 'bind' => 'text']], "/^order by v1$/"],
             [$query, ['param12' => 'test'], "/^test multiple$/"],
             [$query, ['param14' => 'test'], "/^test multiple$/"],
+            [$query, ['PARAM17' => 'test'], "/^case-insensitive2$/"],
+            [$query, ['PARAM18' => 'test'], "/^case-insensitive3$/"],
+            [$query, ['PARAM19' => [[1, 2]]], "/^:param19_0,:param19_1$/"],
         ];
     }
 
