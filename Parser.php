@@ -233,13 +233,22 @@ class Parser
      */
     private function getParam($name)
     {
-        $name = mb_strtolower(ltrim($name, ':'));
+        $name = $outName = mb_strtolower(ltrim($name, ':'));
+
+        // Формируем имя параметра на выход точно такое же, какое и забиндено в парметры.
+        foreach ($this->params as $key => $value) {
+            if (mb_strtolower($key) == $name) {
+                $outName = $key;
+                break;
+            }
+        }
+
         $params = array_change_key_case($this->params, CASE_LOWER);
 
         if (array_key_exists($name, $params)) {
-            return [$name, $params[$name]];
+            return [$outName, $params[$name]];
         } elseif (array_key_exists(':' . $name, $params)) {
-            return [$name, $params[':' . $name]];
+            return [$outName, $params[':' . $name]];
         }
 
         return false;
