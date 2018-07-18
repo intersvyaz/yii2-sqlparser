@@ -237,6 +237,7 @@ class Parser
 
         // Формируем имя параметра на выход точно такое же, какое и забиндено в парметры.
         foreach ($this->params as $key => $value) {
+            $key = ltrim($key, ':');
             if (mb_strtolower($key) == $name) {
                 $outName = $key;
                 break;
