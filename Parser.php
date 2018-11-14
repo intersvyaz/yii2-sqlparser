@@ -135,7 +135,7 @@ class Parser
             }
         }
 
-        // Многоитерационный разбор однострчных комментариев
+        // Многоитерационный разбор однострочных комментариев
         while (true) {
             if (preg_match_all('#--\*([\w|]+)(.+)#', $this->sql, $matches)) {
                 $count = count($matches[0]);
@@ -147,16 +147,29 @@ class Parser
             }
         }
 
+        // разбор переменных - массивов, которые находились изначально вне комментариев
+        if (preg_match_all('#:@(\w+)#', $this->sql, $matches)) {
+            $count = count($matches[0]);
+            for ($i = 0; $i < $count; $i++) {
+                $this->replaceComment($matches[0][$i], $matches[0][$i], $matches[1][$i], false);
+            }
+        }
+
         $this->sql = preg_replace("/\n+/", "\n", trim($this->sql));
     }
 
     /**
-     * Заменяем коментарий в запросе на соответствующе преобразованный блок или удаляем.
+     * Заменяем коментарий или некоторую другую подстроку в запросе на соответствующе преобразованный блок или удаляем,
+     * если указан соответствующий параметр (делается по умолчанию - для комментариев).
+     * Используется также для замены параметра-массива - :@<param_name> не помещенного в комментарий, но только если такой
+     * параметр есть в массиве параметров. Отдельную функцию делать не стали, потому что функционал одинаковый.
+     * Либо можно переименовать функцию.
      * @param string $comment Заменямый комментарий.
      * @param string $queryInComment Текст внутри комментария.
      * @param string $paramName Имя параметра.
+     * @param boolean $replaceNotFoundParam заменять ли комментарий, если не нашли соответствующего параметра в списке
      */
-    private function replaceComment($comment, $queryInComment, $paramName)
+    private function replaceComment($comment, $queryInComment, $paramName, $replaceNotFoundParam = true)
     {
         $param = $this->getParam($paramName);
 
@@ -218,7 +231,7 @@ class Parser
                 }
                 $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/i', $replacement, $queryInComment);
             }
-        } else {
+        } elseif ($replaceNotFoundParam) {
             $queryInComment = '';
         }
 
@@ -235,7 +248,7 @@ class Parser
     {
         $name = $outName = mb_strtolower(ltrim($name, ':'));
 
-        // Формируем имя параметра на выход точно такое же, какое и забиндено в парметры.
+        // Формируем имя параметра на выход точно такое же, какое и забиндено в параметры.
         foreach ($this->params as $key => $value) {
             $key = ltrim($key, ':');
             if (mb_strtolower($key) == $name) {
