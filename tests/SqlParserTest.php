@@ -36,6 +36,8 @@ class SqlParserTest extends TestCase
             ["-- test\n" . $query, [], '/^-- test$/'],
             [$query, ['param11' => [['v1', 'v2']]], "/^:param11_0,:param11_1$/"],
             ["--*param order by param", ['param' => ['v1', 'bind' => 'text']], "/^order by v1$/"],
+            [":@paraM", ['paRam' => [[1,2]]], "/^:paRam_0,:paRam_1$/"],
+            ["--*param sql1\n--*parAM :@paraM", ['Param' => [[1,2]]], "/^\s*sql1\n :Param_0,:Param_1$/"],
             [$query, ['param12' => 'test'], "/^test multiple$/"],
             [$query, ['param14' => 'test'], "/^test multiple$/"],
             [$query, ['PARAM17' => 'test'], "/^case-insensitive2$/"],

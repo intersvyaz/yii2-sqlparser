@@ -1,22 +1,30 @@
 {
-    "name": "intersvyaz/yii2-sqlparser",
-    "description": "Parsing sql-query",
-    "keywords": [
-        "yii2",
-        "extension",
-        "database"
-    ],
-    "homepage": "https://github.com/intersvyaz/yii2-sqlparser.git",
-    "license": "MIT",
-    "minimum-stability": "stable",
-    "require": {
-        "php": ">=5.4.0",
-        "yiisoft/yii2": "~2.0.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "~4.5.0"
-    },
-    "autoload": {
-        "psr-4": {"Intersvyaz\\SqlParser\\": ""}
+  "name": "intersvyaz/yii2-sqlparser",
+  "description": "Parsing sql-query",
+  "keywords": [
+    "yii2",
+    "extension",
+    "database"
+  ],
+  "homepage": "https://github.com/intersvyaz/yii2-sqlparser.git",
+  "license": "MIT",
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=5.4.0",
+    "yiisoft/yii2": ">=2.0.15"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4.5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Intersvyaz\\SqlParser\\": ""
     }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
+  ]
 }
