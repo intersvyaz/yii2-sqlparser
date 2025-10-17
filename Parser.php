@@ -4,8 +4,14 @@ namespace Intersvyaz\SqlParser;
 
 /**
  * Разбор текста запроса.
- * Получение текста по имени файла sql, парсинг специальных комментариев с именами переменных,
- * замена комментариев-массивов на строку переменных с уникальными именами
+ * Получение текста по имени файла sql, парсинг специальных комментариев с именами переменных вида
+ * /*name AND t.name = :name...
+ * или
+ * --*name AND t.name = :name
+ * Замена комментариев-массивов на строку переменных с уникальными именами:
+ * --*names AND t.name IN (:@names)
+ * =>
+ * AND t.name IN (:names_1, :names_2, :names_3, ...)
  */
 class Parser
 {
@@ -175,10 +181,10 @@ class Parser
      * Используется также для замены параметра-массива - :@<param_name> не помещенного в комментарий, но только если
      * такой параметр есть в массиве параметров. Отдельную функцию делать не стали, потому что функционал одинаковый.
      * Либо можно переименовать функцию.
-     * @param string $comment Заменямый комментарий.
+     * @param string $comment Заменяемый комментарий.
      * @param string $queryInComment Текст внутри комментария.
      * @param string $paramName Имя параметра.
-     * @param boolean $replaceNotFoundParam заменять ли комментарий, если не нашли соответствующего параметра в списке
+     * @param boolean $replaceNotFoundParam Заменять ли комментарий, если не нашли соответствующего параметра в списке
      */
     private function replaceComment($comment, $queryInComment, $paramName, $replaceNotFoundParam = true)
     {
@@ -201,9 +207,27 @@ class Parser
             $paramName = $param[0];
             $paramValue = $param[1];
 
-            if (is_array($paramValue)) {
+            if (is_array($paramValue) && array_key_exists('bind', $paramValue)) {
+                /** Пришла пара bind/value, либо просто один bind (тогда он задается = false). */
+                $bind = $paramValue['bind'];
+
+                if ($paramValue['bind'] !== false) {
+                    /**
+                     * Если указано, что надо что-то биндить, то "value" обязателен.
+                     * Но в некоторых местах его используют неправильно для "bind" => "text".
+                     * По-правильному надо было бы там использовать "bind" => false.
+                     */
+                    $value = isset($paramValue['value']) ? $paramValue['value'] : null;
+                }
+            } elseif (is_array($paramValue)) {
+                /**
+                 * Значение параметра - это массив, но почему-то без элемента "bind".
+                 * Это случай, когда у нас элементы для списка значений IN.
+                 * Там массив значений внутри массива - т.е. первым элементом массива является массив значений
+                 * "связанной" переменной.
+                 */
                 $value = isset($paramValue[0]) ? $paramValue[0] : null;
-                $bind = isset($paramValue['bind']) ? $paramValue['bind'] : true;
+                $bind = true;
             } else {
                 $value = $paramValue;
                 $bind = true;
@@ -259,9 +283,9 @@ class Parser
 
     /**
      * Ищет параметр в массиве $this->params
-     * @param string $name имя параметра
-     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь, если параметра
-     *     нет
+     * @param string $name Имя параметра
+     * @return array|bool Массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра']
+     *                    или ложь, если параметра нет
      */
     private function getParam($name)
     {
