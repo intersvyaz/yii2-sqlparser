@@ -1,20 +1,19 @@
 <?php
+
 namespace Intersvyaz\SqlParser;
 
+/**
+ * Разбор текста запроса.
+ * Получение текста по имени файла sql, парсинг специальных комментариев с именами переменных,
+ * замена комментариев-массивов на строку переменных с уникальными именами
+ */
 class Parser
 {
-
-    /**
-     * @var string Текст sql запроса, который надо преобразовать
-     */
+    /** @var string Текст sql запроса, который надо преобразовать, либо имя файла с запросом */
     private $sql;
-    /**
-     * @var array параметры, влияющие на парсинг sql запроса
-     */
+    /** @var array Параметры, влияющие на парсинг sql запроса */
     private $params;
-    /**
-     * @var array "упрощённый" список параметров, для кеширования
-     */
+    /** @var array "Упрощённый" список параметров (для кеширования) */
     private $simplifiedParams;
 
     /**
@@ -34,7 +33,8 @@ class Parser
     }
 
     /**
-     * @return string готовый sql запрос
+     * Готовый sql запрос
+     * @return string
      */
     public function getSql()
     {
@@ -50,7 +50,8 @@ class Parser
     }
 
     /**
-     * @return array "упрощённый" список параметров
+     * "Упрощённый" список параметров
+     * @return array
      */
     public function getSimplifiedParams()
     {
@@ -66,7 +67,7 @@ class Parser
      * @param array $params Параметры построения запроса.
      * @return array
      */
-    private function simplifyParams($params)
+    private function simplifyParams(array $params)
     {
         if (empty($params)) {
             return $params;
@@ -75,6 +76,7 @@ class Parser
         $newParams = [];
         foreach ($params as $key => $value) {
             $key = ':' . ltrim($key, ':');
+
             if (is_array($value)) {
                 if (!isset($value['bind'])) {
                     $value['bind'] = true;
@@ -93,9 +95,8 @@ class Parser
                         }
                     }
                 } elseif ($value['bind'] === 'tuple') {
-
                     if (isset($value[0]) && is_array($value[0])) {
-                        //скинем индексы
+                        // Скинем индексы
                         $value[0] = array_values($value[0]);
 
                         foreach ($value[0] as $valKey => $valVal) {
@@ -127,9 +128,17 @@ class Parser
      */
     private function parseSql()
     {
+        $matches = null;
+
         // Разбор многострочных комментариев
-        if (preg_match_all('#/\*([\w|]+)(.+?)\*/#s', $this->sql, $matches)) {
+        // ВАЖНО: "(.*?)" а не "(.+?)" на случай, если просто написали код такого типа:
+        // WHEN 700 /*float4*/ THEN 24 /*FLT_MANT_DIG*/
+        // В случае "+" как комментарий будет распознана строка, включающая код:
+        // "*/ THEN 24 /*FLT_MANT_DIG"
+        // который в итоге пропадет потом из результирующей строки запроса.
+        if (preg_match_all('#/\*([\w|]+)(.*?)\*/#s', $this->sql, $matches)) {
             $count = count($matches[0]);
+
             for ($i = 0; $i < $count; $i++) {
                 $this->replaceComment($matches[0][$i], $matches[2][$i], $matches[1][$i]);
             }
@@ -139,6 +148,7 @@ class Parser
         while (true) {
             if (preg_match_all('#--\*([\w|]+)(.+)#', $this->sql, $matches)) {
                 $count = count($matches[0]);
+
                 for ($i = 0; $i < $count; $i++) {
                     $this->replaceComment($matches[0][$i], $matches[2][$i], $matches[1][$i]);
                 }
@@ -147,9 +157,10 @@ class Parser
             }
         }
 
-        // разбор переменных - массивов, которые находились изначально вне комментариев
+        // Разбор переменных-массивов, которые находились изначально вне комментариев
         if (preg_match_all('#:@(\w+)#', $this->sql, $matches)) {
             $count = count($matches[0]);
+
             for ($i = 0; $i < $count; $i++) {
                 $this->replaceComment($matches[0][$i], $matches[0][$i], $matches[1][$i], false);
             }
@@ -159,10 +170,10 @@ class Parser
     }
 
     /**
-     * Заменяем коментарий или некоторую другую подстроку в запросе на соответствующе преобразованный блок или удаляем,
+     * Заменяем комментарий или некоторую другую подстроку в запросе на соответствующе преобразованный блок или удаляем,
      * если указан соответствующий параметр (делается по умолчанию - для комментариев).
-     * Используется также для замены параметра-массива - :@<param_name> не помещенного в комментарий, но только если такой
-     * параметр есть в массиве параметров. Отдельную функцию делать не стали, потому что функционал одинаковый.
+     * Используется также для замены параметра-массива - :@<param_name> не помещенного в комментарий, но только если
+     * такой параметр есть в массиве параметров. Отдельную функцию делать не стали, потому что функционал одинаковый.
      * Либо можно переименовать функцию.
      * @param string $comment Заменямый комментарий.
      * @param string $queryInComment Текст внутри комментария.
@@ -189,6 +200,7 @@ class Parser
         } elseif ($param) {
             $paramName = $param[0];
             $paramValue = $param[1];
+
             if (is_array($paramValue)) {
                 $value = isset($paramValue[0]) ? $paramValue[0] : null;
                 $bind = isset($paramValue['bind']) ? $paramValue['bind'] : true;
@@ -199,9 +211,11 @@ class Parser
 
             if ($bind === true && is_array($value)) {
                 $valArr = [];
+
                 foreach (array_keys($value) as $keyVal) {
                     $valArr[] = ':' . $paramName . '_' . $keyVal;
                 }
+
                 $replacement = implode(',', $valArr);
                 $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/i', $replacement, $queryInComment);
             } elseif ($bind === 'text') {
@@ -209,26 +223,31 @@ class Parser
             } elseif ($bind === 'tuple') {
                 if (is_array($paramValue[0])) {
                     $replacements = [];
-                    //скинем индексы
+                    // Скинем индексы
                     $paramValue[0] = array_values($paramValue[0]);
 
                     foreach ($paramValue[0] as $keyParam => $val) {
                         $name = ':' . $paramName . '_' . $keyParam;
                         if (is_array($val)) {
                             $valArr = [];
+
                             foreach (array_keys($val) as $keyVal) {
                                 $valArr[] = $name . '_' . $keyVal;
                             }
+
                             $valName = implode(',', $valArr);
                         } else {
                             $valName = $name;
                         }
+
                         $replacements[] = '(' . $valName . ')';
                     }
+
                     $replacement = implode(',', $replacements);
                 } else {
                     $replacement = $paramValue;
                 }
+
                 $queryInComment = preg_replace('/:@' . preg_quote($paramName) . '/i', $replacement, $queryInComment);
             }
         } elseif ($replaceNotFoundParam) {
@@ -241,7 +260,7 @@ class Parser
     /**
      * Ищет параметр в массиве $this->params
      * @param string $name имя параметра
-     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь если параметра
+     * @return array|bool массив ['имя_параметра_без_ведущего_двоеточия', 'значение_параметра'] или ложь, если параметра
      *     нет
      */
     private function getParam($name)
@@ -251,6 +270,7 @@ class Parser
         // Формируем имя параметра на выход точно такое же, какое и забиндено в параметры.
         foreach ($this->params as $key => $value) {
             $key = ltrim($key, ':');
+
             if (mb_strtolower($key) == $name) {
                 $outName = $key;
                 break;
